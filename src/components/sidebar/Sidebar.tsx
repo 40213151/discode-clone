@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import "./Sidebar.scss";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import AddIcon from "@mui/icons-material/Add";
@@ -8,9 +8,11 @@ import HeadphonesIcon from "@mui/icons-material/Headphones";
 import SettingsIcon from "@mui/icons-material/Settings";
 import { auth } from "../../firebase";
 import { useAppSelector } from "../../App/hooks";
+import useCollection from "../../hooks/useCollection";
 
 const Sidebar = () => {
   const user = useAppSelector((state) => state.user);
+  const { documents: channels } = useCollection("channels");
 
   return (
     <div className="sidebar">
@@ -40,10 +42,13 @@ const Sidebar = () => {
           </div>
 
           <div className="sidebbarChannelList">
-            <SidebarChannel />
-            <SidebarChannel />
-            <SidebarChannel />
-            <SidebarChannel />
+            {channels.map((channel) => (
+              <SidebarChannel
+                channel={channel}
+                id={channel.id}
+                key={channel.id}
+              />
+            ))}
           </div>
 
           <div className="sidebarFooter">
