@@ -15,6 +15,8 @@ import {
   collection,
   getFirestore,
   onSnapshot,
+  orderBy,
+  query,
   serverTimestamp,
 } from "firebase/firestore";
 
@@ -46,7 +48,12 @@ const Chat = () => {
       "messages"
     );
 
-    onSnapshot(collectionRef, (snapshot) => {
+    let collectionRefOrderBy = query(
+      collectionRef,
+      orderBy("timestamp", "desc")
+    );
+
+    onSnapshot(collectionRefOrderBy, (snapshot) => {
       let results: Messages[] = [];
       snapshot.docs.forEach((doc) => {
         results.push({
@@ -74,6 +81,8 @@ const Chat = () => {
       timestamp: serverTimestamp(),
       user: user,
     });
+
+    setInputText("");
   };
 
   return (
@@ -93,6 +102,7 @@ const Chat = () => {
         <AddCircleOutlineIcon />
         <form>
           <input
+            value={inputText}
             type="text"
             placeholder="send a message"
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
