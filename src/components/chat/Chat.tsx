@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./Chat.scss";
 import ChatHeader from "./ChatHeader";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
@@ -10,22 +10,58 @@ import { useAppSelector } from "../../App/hooks";
 import {
   CollectionReference,
   DocumentData,
+  Timestamp,
   addDoc,
   collection,
   getFirestore,
+  onSnapshot,
   serverTimestamp,
 } from "firebase/firestore";
 
+interface Messages {
+  timestamp: Timestamp;
+  message: string;
+  user: {
+    uid: string;
+    photo: string;
+    email: string;
+    displayName: string;
+  };
+}
+
 const Chat = () => {
   const [inputText, setInputText] = useState<string>("");
+  const [messages, setMessages] = useState<Messages[]>([]);
+
   const channelName = useAppSelector((state) => state.channel.channelName);
   const channelId = useAppSelector((state) => state.channel.channelId);
   const user = useAppSelector((state) => state.user.user);
+  const db = getFirestore();
+
+  useEffect(() => {
+    let collectionRef = collection(
+      db,
+      "channels",
+      String(channelId),
+      "messages"
+    );
+
+    onSnapshot(collectionRef, (snapshot) => {
+      let results: Messages[] = [];
+      snapshot.docs.forEach((doc) => {
+        results.push({
+          timestamp: doc.data().timestamp,
+          message: doc.data().message,
+          user: doc.data().user,
+        });
+      });
+      setMessages(results);
+    });
+  }, [channelId]);
 
   const sendMessage = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
 
-    const db = getFirestore();
     const collectionRef: CollectionReference<DocumentData> = collection(
       db,
       "channels",
@@ -35,7 +71,7 @@ const Chat = () => {
 
     await addDoc(collectionRef, {
       message: inputText,
-      timestanp: serverTimestamp(),
+      timestamp: serverTimestamp(),
       user: user,
     });
   };
@@ -44,10 +80,14 @@ const Chat = () => {
     <div className="chat">
       <ChatHeader channelName={channelName} />
       <div className="chatMessage">
-        <ChatMessage />
-        <ChatMessage />
-        <ChatMessage />
-        <ChatMessage />
+        {messages.map((message, index) => (
+          <ChatMessage
+            key={index}
+            message={message.message}
+            timestamp={message.timestamp}
+            user={message.user}
+          />
+        ))}
       </div>
       <div className="chatInput">
         <AddCircleOutlineIcon />
